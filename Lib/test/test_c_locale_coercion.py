@@ -41,6 +41,10 @@ elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
     EXPECTED_C_LOCALE_FS_ENCODING = "iso8859-1"
+elif sys.platform.startswith("hp-ux"):
+    # HP-UX uses roman8 in the C locale, other *nix platforms use ASCII
+    EXPECTED_C_LOCALE_STREAM_ENCODING = "roman8"
+    EXPECTED_C_LOCALE_FS_ENCODING = "hp-roman8"
 elif sys.platform == "darwin":
     # FS encoding is UTF-8 on macOS
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
@@ -222,12 +226,14 @@ class _LocaleHandlingTestCase(unittest.TestCase):
         """
         result = EncodingDetails.get_child_details(env_vars)
         encoding_details, stderr_lines = result
+        #print("encoding_details: %s\n" % encoding_details)
         expected_details = EncodingDetails.get_expected_details(
             coercion_expected,
             expected_fs_encoding,
             expected_stream_encoding,
             env_vars
         )
+        #print("expected_details: %s\n" % expected_details)
         self.assertEqual(encoding_details, expected_details)
         if expected_warnings is None:
             expected_warnings = []
@@ -251,7 +257,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
         self.maxDiff = None
 
         expected_fs_encoding = "utf-8"
-        expected_stream_encoding = "utf-8"
+        expected_stream_encoding = "utf8"
 
         base_var_dict = {
             "LANG": "",
@@ -361,17 +367,17 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
 
     def test_PYTHONCOERCECLOCALE_not_set(self):
         # This should coerce to the first available target locale by default
-        self._check_c_locale_coercion("utf-8", "utf-8", coerce_c_locale=None)
+        self._check_c_locale_coercion("utf-8", "utf8", coerce_c_locale=None)
 
     def test_PYTHONCOERCECLOCALE_not_zero(self):
         # *Any* string other than "0" is considered "set" for our purposes
         # and hence should result in the locale coercion being enabled
         for setting in ("", "1", "true", "false"):
-            self._check_c_locale_coercion("utf-8", "utf-8", coerce_c_locale=setting)
+            self._check_c_locale_coercion("utf-8", "utf8", coerce_c_locale=setting)
 
     def test_PYTHONCOERCECLOCALE_set_to_warn(self):
         # PYTHONCOERCECLOCALE=warn enables runtime warnings for legacy locales
-        self._check_c_locale_coercion("utf-8", "utf-8",
+        self._check_c_locale_coercion("utf-8", "utf8",
                                       coerce_c_locale="warn",
                                       expected_warnings=[CLI_COERCION_WARNING])
 
